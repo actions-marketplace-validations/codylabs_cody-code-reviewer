@@ -33,15 +33,21 @@ on:
 
 jobs:
   code_review:
+    if: ${{ github.event.pull_request.head.repo.fork == false }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Clone cody-code-reviewer repository
         run: |
           git clone https://github.com/codylabs/cody-code-reviewer.git
           cd cody-code-reviewer
+          # Pin to a specific release commit to ensure stability https://github.com/codylabs/cody-code-reviewer/releases/tag/v1.2.0
+          git checkout 2eee062e2ba9918fbfd28d218a9d2b095e99d57e
 
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
@@ -68,9 +74,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-permissions:
-  contents: read
-  pull-requests: write
 ```
 
 3. Commit your code, create a pull request and watch Cody in action!
