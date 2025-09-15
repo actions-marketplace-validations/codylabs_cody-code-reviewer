@@ -33,7 +33,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # Optional: update to a model of your choice from https://platform.openai.com/docs/models
-          OPENAI_MODEL: "gpt-5"
+          OPENAI_MODEL: "gpt-5-codex"
 
       - name: Comment on Pull Request
         run: |
