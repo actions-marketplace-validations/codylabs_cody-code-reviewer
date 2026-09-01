@@ -1,48 +1,30 @@
 name: Automated Code Review by Cody
 
 on:
-  pull_request:
+  # The reviewer needs a provider key and a write-capable PR token. Running the
+  # workflow definition from the protected base branch lets it review forks safely,
+  # provided this job never checks out or executes pull-request-controlled code.
+  pull_request_target:
     types: [opened, synchronize, reopened]
 
 jobs:
   code_review:
-    if: ${{ github.event.pull_request.head.repo.fork == false }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
-
-      - name: Clone cody-code-reviewer repository
-        run: |
-          git clone https://github.com/codylabs/cody-code-reviewer.git
-          cd cody-code-reviewer
-          # Pin to a specific release commit to ensure stability https://github.com/codylabs/cody-code-reviewer/releases/tag/v1.2.0
-          git checkout 2eee062e2ba9918fbfd28d218a9d2b095e99d57e
-
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
+      - name: Review pull request
+        # Pinned to a published release SHA: PR-controlled code must never run
+        # with this job's secrets (Cody's own review flagged the uses: ./ form).
+        uses: codylabs/cody-code-reviewer@5ec18da9b75541f5ce2b33edcfb8a7c666551b31 # v1.7.0
         with:
-          python-version: "3.9"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run Code Review Model
-        run: |
-          python src/review_pull_request.py ${{ github.event.pull_request.number }} ${{ github.repository }} > ${{ github.workspace }}/output.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          # Optional: update to a model of your choice from https://platform.openai.com/docs/models
-          OPENAI_MODEL: "gpt-5"
-
-      - name: Comment on Pull Request
-        run: |
-          python src/comment_on_pr.py ${{ github.event.pull_request.number }} "${{ secrets.GITHUB_TOKEN }}" ${{ github.repository }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number }}
+          repository: ${{ github.repository }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          model: gpt-5.6-luna
+          # To switch to Claude, replace the two lines above with:
+          # anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # model: claude-opus-4-8
